@@ -1,0 +1,112 @@
+classDiagram
+    direction TB
+
+    %% PawPal+ — four core domain classes
+    %% Pet info, owner availability, pet needs, and completable tasks
+
+    class Pet {
+        +String name
+        +String species
+        +String breed
+        +int age
+        +List~String~ allowedFoods
+        +List~String~ restrictedFoods
+        +String medicalHistory
+        +updateProfile(name, species, breed, age)
+        +setDietaryRestrictions(allowed, restricted)
+        +updateMedicalHistory(history)
+        +getCareRequirements() List~PetNeeds~
+    }
+
+    class OwnerAvailability {
+        +String ownerName
+        +List~TimeSlot~ availableTimes
+        +List~String~ priorityPreferences
+        +addAvailableTime(startTime, endTime)
+        +removeAvailableTime(slotId)
+        +setPriorityPreferences(priorities)
+        +getAvailableTimes() List~TimeSlot~
+        +generateScheduleOptions(pet, needs, tasks) List~DailySchedule~
+        +editSchedule(schedule, taskId, newStartTime) DailySchedule
+        +explainSchedule(schedule) String
+    }
+
+    class PetNeeds {
+        +String needType
+        +String description
+        +String frequency
+        +Boolean isRequired
+        +Priority minimumPriority
+        +addNeed(needType, description, frequency)
+        +updateNeed(needType, description, frequency)
+        +toTasks() List~Task~
+    }
+
+    class Task {
+        +String taskId
+        +String title
+        +int durationMinutes
+        +Priority priority
+        +String category
+        +TaskStatus status
+        +Time scheduledStartTime
+        +createTask(title, duration, priority, category)
+        +updateTask(title, duration, priority)
+        +reschedule(newStartTime)
+        +markComplete()
+        +isScheduled() Boolean
+    }
+
+    %% Supporting types used by the core classes
+
+    class TimeSlot {
+        +String slotId
+        +Time startTime
+        +Time endTime
+        +fits(durationMinutes) Boolean
+        +overlaps(other) Boolean
+    }
+
+    class DailySchedule {
+        +String scheduleId
+        +Date date
+        +List~Task~ scheduledTasks
+        +List~Task~ unscheduledTasks
+        +String explanation
+        +addTask(task, startTime)
+        +removeTask(taskId)
+        +moveTask(taskId, newStartTime)
+        +getTasksByTime() List~Task~
+    }
+
+    class Priority {
+        <<enumeration>>
+        LOW
+        MEDIUM
+        HIGH
+    }
+
+    class TaskStatus {
+        <<enumeration>>
+        PENDING
+        SCHEDULED
+        COMPLETED
+        SKIPPED
+    }
+
+    %% Relationships
+
+    Pet "1" *-- "0..*" PetNeeds : has
+    Pet "1" o-- "0..*" Task : care tasks for
+
+    PetNeeds "1" ..> "0..*" Task : generates
+
+    OwnerAvailability "1" *-- "1..*" TimeSlot : contains
+    OwnerAvailability "1" ..> "0..*" DailySchedule : produces
+    OwnerAvailability "1" --> "0..*" Task : assigns
+
+    DailySchedule "1" o-- "0..*" Task : includes
+
+    Task --> Priority : uses
+    Task --> TaskStatus : uses
+    PetNeeds --> Priority : uses
